@@ -9,6 +9,7 @@
 - **数据库持久化**：SQLite 自动保存模板、载荷、测试结果，重启不丢失
 - **专业报告导出**：HTML 红队评测报告，含统计卡片、绕过率/拦截率分析
 - **模型管理**：支持获取模型列表、弹窗选择模型
+- **自定义输入**：支持自定义提示词导入和载荷管理
 
 ## 快速开始
 
@@ -18,9 +19,6 @@ pip install requests
 
 # 启动 GUI
 python gui_app.py
-
-# 或使用 CLI 版本
-python red_team_cli.py
 ```
 
 ## 使用说明
@@ -36,15 +34,14 @@ python red_team_cli.py
 
 ```
 agent红队测试/
-├── gui_app.py              # 主 GUI 程序
-├── red_team_cli.py          # CLI 入口
-├── red_team_core/           # 核心模块
+├── gui_app.py               # 主 GUI 程序
+├── red_team_core/            # 核心模块
 │   ├── __init__.py
-│   ├── agent.py             # 测试执行引擎
-│   ├── analyzer.py          # 响应分析器
-│   ├── reporter.py          # 报告生成器
-│   ├── templates.py         # 测试模板库
-│   └── db.py                # SQLite 持久化
+│   ├── agent.py              # 测试执行引擎
+│   ├── analyzer.py           # 响应分析器
+│   ├── reporter.py           # 报告生成器
+│   ├── templates.py          # 测试模板库
+│   └── db.py                 # SQLite 持久化
 ├── .gitignore
 └── README.md
 ```

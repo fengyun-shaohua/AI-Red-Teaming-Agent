@@ -1,4 +1,4 @@
-# Database
+﻿# Database
 *.db
 
 # Python cache
@@ -8,6 +8,13 @@ __pycache__/
 
 # Temporary/dev scripts
 _*.py
+temp_*.json
+
+# Preset files
+Mur*.json
+TGbreak*.json
+V114514*.json
+双人成行*.json
 
 # IDE
 .vscode/
@@ -19,6 +26,6 @@ _*.py
 .DS_Store
 Thumbs.db
 
-# Sensitive - do NOT commit API keys
+# Sensitive
 .env
 secrets.json
