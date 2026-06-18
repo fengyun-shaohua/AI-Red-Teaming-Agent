@@ -6,8 +6,8 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Temporary/dev scripts
-_*.py
+# Temporary/dev scripts (root only, so red_team_core/__init__.py is tracked)
+/_*.py
 temp_*.json
 
 # Preset files
