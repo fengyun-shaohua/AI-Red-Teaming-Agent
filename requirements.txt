@@ -1,0 +1,11 @@
+# LangChain AI 框架
+langchain>=1.0.0
+langchain-openai>=1.0.0
+
+# HTTP / 异步(模型列表接口与渗透模块使用)
+requests>=2.31.0
+aiohttp>=3.9.0
+
+# 内网渗透模块可选依赖
+python-nmap>=0.7.1
+packaging>=23.0

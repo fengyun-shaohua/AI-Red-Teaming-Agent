@@ -3,8 +3,13 @@ import json, os
 from datetime import datetime
 
 class Reporter:
-    @staticmethod
-    def generate(results, model_name, concurrency=5, retries=2, output_file="red_team_report.html"):
+    def __init__(self, results, model_name, concurrency=5, retries=2):
+        self.results = results
+        self.model_name = model_name
+        self.concurrency = concurrency
+        self.retries = retries
+
+    def generate(self, output_file="red_team_report.html"):
         total = len(self.results)
         stats = {"DANGEROUS_BYPASS":0,"SAFE_BYPASS":0,"BLOCKED":0,"REVIEW":0}
         for r in self.results: stats[r["verdict"]] += 1
