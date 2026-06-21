@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from red_team_core import (
     JAILBREAK_TEMPLATES, DEFAULT_PAYLOADS, ResponseAnalyzer, RedTeamAgent,
-    JudgeAnalyzer, load_payloads, PenetrationAgent
+    JudgeAnalyzer, load_payloads
 )
 from red_team_core.llm_factory import build_target_llm, build_judge_llm
 from red_team_core.db import (
@@ -188,9 +188,6 @@ class RedTeamGUI:
 
         tab_res = ttk.Frame(self.nb); self.nb.add(tab_res, text="  测试结果  ")
         self._build_results_tab(tab_res)
-
-        tab_penetration = ttk.Frame(self.nb); self.nb.add(tab_penetration, text="  内网渗透  ")
-        self._build_penetration_tab(tab_penetration)
 
         # ---- Bottom ----
         bottom = tk.Frame(self.root, bg="white", height=44)
@@ -1180,88 +1177,7 @@ tr:hover{background:#f7fafc}
                 self.root.after(0, lambda: self.agent_fetch_btn.config(text="获取模型", state="normal"))
         threading.Thread(target=worker, daemon=True).start()
 
-    # ========== 内网渗透 Tab ==========
-    def _build_penetration_tab(self, parent):
-        ctrl = tk.Frame(parent, bg="white"); ctrl.pack(fill="x", padx=6, pady=3)
-        tk.Button(ctrl, text="开始扫描", font=FONT_SMALL, bg=COLORS["success"], fg="white", relief="flat",
-                  command=self._run_penetration).pack(side="left", padx=1)
-        tk.Button(ctrl, text="停止", font=FONT_SMALL, bg="#9E9E9E", fg="white", relief="flat",
-                  command=lambda: setattr(self, "_pen_running", False)).pack(side="left", padx=1)
-        ttk.Separator(ctrl, orient="vertical").pack(side="left", fill="y", padx=4)
-        tk.Label(ctrl, text="靶场API", bg="white", font=FONT).pack(side="left", padx=(0,2))
-        self.pen_url_var = tk.StringVar(value="http://localhost:8045/v1")
-        ttk.Entry(ctrl, textvariable=self.pen_url_var, width=26, font=FONT).pack(side="left", padx=(0,8))
-        tk.Label(ctrl, text="Key", bg="white", font=FONT).pack(side="left", padx=(0,2))
-        self.pen_key_var = tk.StringVar(value="")
-        ttk.Entry(ctrl, textvariable=self.pen_key_var, width=20, show="*", font=FONT).pack(side="left", padx=(0,8))
-        tk.Label(ctrl, text="并发", bg="white", font=FONT).pack(side="left", padx=(0,2))
-        self.pen_conc_var = tk.IntVar(value=3)
-        ttk.Spinbox(ctrl, from_=1, to=20, textvariable=self.pen_conc_var, width=4).pack(side="left")
-        self.pen_status_var = tk.StringVar(value="就绪")
-        tk.Label(ctrl, textvariable=self.pen_status_var, fg=COLORS["primary"],
-                 font=FONT_BOLD, bg="white").pack(side="right", padx=6)
 
-        # 结果表格
-        res_frame = ttk.LabelFrame(parent, text=" 渗透结果 ", style="Card.TLabelframe", padding=6)
-        res_frame.pack(fill="both", expand=True, padx=6, pady=3)
-        cols = ("target", "ip", "ports", "vulns", "status")
-        self.pen_tree = ttk.Treeview(res_frame, columns=cols, show="headings")
-        self.pen_tree.heading("target", text="目标"); self.pen_tree.column("target", width=160)
-        self.pen_tree.heading("ip", text="IP地址"); self.pen_tree.column("ip", width=120)
-        self.pen_tree.heading("ports", text="开放端口"); self.pen_tree.column("ports", width=200)
-        self.pen_tree.heading("vulns", text="漏洞数"); self.pen_tree.column("vulns", width=60)
-        self.pen_tree.heading("status", text="状态"); self.pen_tree.column("status", width=80)
-        self.pen_tree.pack(fill="both", expand=True, padx=4, pady=4)
-        self._pen_results = []
-        self._pen_running = False
-
-    def _run_penetration(self):
-        if self._pen_running:
-            return
-        url = self.pen_url_var.get().strip()
-        key = self.pen_key_var.get().strip()
-        if not url:
-            messagebox.showwarning("提示", "请填写靶场API地址")
-            return
-        self._pen_running = True
-        self.pen_status_var.set("扫描中...")
-        for item in self.pen_tree.get_children():
-            self.pen_tree.delete(item)
-
-        def worker():
-            try:
-                agent = PenetrationAgent(api_url=url, api_key=key,
-                                         concurrency=self.pen_conc_var.get())
-                import asyncio
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    results = loop.run_until_complete(agent.run_all_targets())
-                finally:
-                    loop.close()
-                self._pen_results = results
-                self.root.after(0, lambda: self._on_penetration_done(results))
-            except Exception as e:
-                self.root.after(0, lambda: self._on_penetration_error(str(e)))
-
-        threading.Thread(target=worker, daemon=True).start()
-
-    def _on_penetration_done(self, results):
-        self._pen_running = False
-        for r in results:
-            self.pen_tree.insert("", "end", values=(
-                r.get("target_id", "?"),
-                r.get("ip", "?"),
-                ",".join(str(p) for p in r.get("open_ports", [])) or "-",
-                len(r.get("vulnerabilities", [])),
-                r.get("status", "?"),
-            ))
-        self.pen_status_var.set("完成: %d 个目标" % len(results))
-
-    def _on_penetration_error(self, err):
-        self._pen_running = False
-        self.pen_status_var.set("失败: %s" % err[:40])
-        messagebox.showerror("错误", "渗透扫描失败: %s" % err)
 
     # ========== 测试执行 ==========
     def run_evaluation(self):
