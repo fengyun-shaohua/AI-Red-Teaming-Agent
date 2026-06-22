@@ -374,6 +374,7 @@ function startEvaluate() {
         api_key: document.getElementById("target_key").value.trim(),
         model_name: document.getElementById("target_model").value.trim(),
         concurrency: parseInt(document.getElementById("concurrency").value) || 3,
+        timeout: parseInt(document.getElementById("timeout").value) || 120,
         use_agent: useAgent,
         agent_url: document.getElementById("agent_url").value.trim(),
         agent_key: document.getElementById("agent_key").value.trim(),

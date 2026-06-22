@@ -12,7 +12,7 @@ _EMPTY_KEY = "EMPTY"
 
 
 def build_target_llm(base_url, api_key, model_name, temperature=0.7,
-                     max_tokens=500, timeout=30, retries=2):
+                     max_tokens=500, timeout=120, retries=2):
     """构造被测目标模型(红队攻击对象)。
 
     参数与原 RedTeamAgent 的取值一一对应:
@@ -21,7 +21,9 @@ def build_target_llm(base_url, api_key, model_name, temperature=0.7,
       model_name    模型 id
       temperature   采样温度(评测默认 0.7)
       max_tokens    单次回复上限
-      timeout       单次请求超时(秒)
+      timeout       单次请求超时(秒)。注意:此值作为 httpx 的 read timeout,
+                    长模板(如 8000 字越狱模板)生成的响应可能较慢,默认 120s
+                    以避免模型实际已返回但客户端提前断开。
       retries       失败重试次数(LangChain 内置指数退避)
     """
     return ChatOpenAI(
@@ -36,7 +38,7 @@ def build_target_llm(base_url, api_key, model_name, temperature=0.7,
 
 
 def build_judge_llm(base_url, api_key, model_name, temperature=0.3,
-                    max_tokens=300, timeout=30, retries=2):
+                    max_tokens=300, timeout=120, retries=2):
     """构造 AI 判定模型(用于 LLM-as-Judge 评估目标模型响应)。
 
     判定模型与目标模型相互独立,可用更强模型评判弱模型。

@@ -19,7 +19,7 @@ from .llm_factory import build_target_llm
 
 class RedTeamAgent:
     def __init__(self, api_key=None, base_url=None, model_name="gpt-3.5-turbo",
-                 extra_templates=None, concurrency=5, retries=2, timeout=30,
+                 extra_templates=None, concurrency=5, retries=2, timeout=120,
                  target_llm=None):
         self.api_key = api_key
         self.base_url = base_url.rstrip("/") if base_url else ""

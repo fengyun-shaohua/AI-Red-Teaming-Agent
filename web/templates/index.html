@@ -29,6 +29,8 @@
             <div class="flex items-center gap-2">
                 <label class="w-16 text-slate-600">并发</label>
                 <input id="concurrency" type="number" value="3" min="1" max="10" class="w-20 border rounded px-2 py-1">
+                <label class="text-slate-600 ml-2">超时(秒)</label>
+                <input id="timeout" type="number" value="120" min="10" max="600" class="w-20 border rounded px-2 py-1" title="单次请求超时,长响应建议≥120">
                 <span id="conn_status" class="text-green-600 text-xs ml-2"></span>
             </div>
         </div>

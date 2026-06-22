@@ -262,6 +262,7 @@ async def ws_evaluate(websocket: WebSocket):
             base_url = (config.get("base_url") or "").strip()
             model_name = (config.get("model_name") or "").strip()
             concurrency = max(1, int(config.get("concurrency", 3)))
+            timeout = max(10, int(config.get("timeout", 120)))
             use_agent = bool(config.get("use_agent", False))
             agent_url = (config.get("agent_url") or "").strip()
             agent_key = (config.get("agent_key") or "").strip()
@@ -284,13 +285,13 @@ async def ws_evaluate(websocket: WebSocket):
             if api_key:
                 target_llm = build_target_llm(
                     base_url=base_url, api_key=api_key, model_name=model_name,
-                    temperature=0.7, max_tokens=500, timeout=30, retries=2)
+                    temperature=0.7, max_tokens=500, timeout=timeout, retries=2)
 
             judge_analyzer = None
             if use_agent and agent_key:
                 judge_llm = build_judge_llm(
                     base_url=agent_url, api_key=agent_key, model_name=agent_model,
-                    temperature=0.3, max_tokens=300, timeout=30, retries=2)
+                    temperature=0.3, max_tokens=300, timeout=timeout, retries=2)
                 judge_analyzer = JudgeAnalyzer(judge_llm)
 
             def judge(prompt, response):
@@ -301,7 +302,7 @@ async def ws_evaluate(websocket: WebSocket):
             agent = RedTeamAgent(
                 api_key=api_key if api_key else None,
                 base_url=base_url, model_name=model_name,
-                concurrency=concurrency, retries=2, timeout=30, target_llm=target_llm)
+                concurrency=concurrency, retries=2, timeout=timeout, target_llm=target_llm)
             samples = agent.generate_samples(selected_plds, selected_tpls)
             total = len(samples)
             send({"type": "start", "total": total})
