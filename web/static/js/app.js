@@ -16,6 +16,9 @@ let customInputs = window.__INITIAL__.custom_inputs || [];
 let editingTplIdx = -1;
 let editingPldIdx = -1;
 let ws = null;
+// 模型列表缓存(target/agent 各一份)与选择浮层当前目标
+const MODEL_LISTS = { target: [], agent: [] };
+let modelPickerTarget = "target";
 
 // ============================ 初始化 ============================
 document.addEventListener("DOMContentLoaded", () => {
@@ -298,11 +301,9 @@ async function fetchModels(which) {
     const keyEl = which === "target"
         ? document.getElementById("target_key")
         : document.getElementById("agent_key");
-    const listId = which === "target" ? "target_model_list" : "agent_model_list";
     const r = await api("POST", "/api/models", { base_url: urlEl.value.trim(), api_key: keyEl.value.trim() });
     if (r.ok && r.models && r.models.length) {
-        const dl = document.getElementById(listId);
-        dl.innerHTML = r.models.map(m => `<option value="${esc(m)}">`).join("");
+        MODEL_LISTS[which] = r.models;
         // 自动填充第一个
         const modelEl = which === "target"
             ? document.getElementById("target_model")
@@ -310,8 +311,49 @@ async function fetchModels(which) {
         modelEl.value = r.models[0];
         setStatus(`已获取 ${r.models.length} 个模型`, "#16a34a");
     } else {
+        MODEL_LISTS[which] = [];
         setStatus(r.message || "获取模型失败", "#dc2626");
     }
+}
+
+// ----- 模型选择浮层(替代 datalist,显示全部模型) -----
+function openModelPicker(which) {
+    modelPickerTarget = which;
+    document.getElementById("model_picker_title").textContent =
+        (which === "target" ? "选择目标模型" : "选择判定模型");
+    document.getElementById("model_search").value = "";
+    renderModelList("");
+    document.getElementById("model_picker").classList.remove("hidden");
+}
+
+function renderModelList(filterText) {
+    const box = document.getElementById("model_list_box");
+    const models = MODEL_LISTS[modelPickerTarget] || [];
+    if (!models.length) {
+        box.innerHTML = `<p class="text-slate-400 text-center py-4">暂无模型,请先点"获取模型"</p>`;
+        return;
+    }
+    const ft = filterText.toLowerCase();
+    const current = (modelPickerTarget === "target"
+        ? document.getElementById("target_model")
+        : document.getElementById("agent_model")).value;
+    box.innerHTML = models
+        .filter(m => !ft || m.toLowerCase().includes(ft))
+        .map(m => `<div class="model-item ${m === current ? 'bg-blue-50' : ''}" onclick="selectModel('${esc(m).replace(/'/g, "\\'")}')">${esc(m)}</div>`)
+        .join("");
+}
+
+function filterModelList() {
+    renderModelList(document.getElementById("model_search").value);
+}
+
+function selectModel(m) {
+    if (modelPickerTarget === "target") {
+        document.getElementById("target_model").value = m;
+    } else {
+        document.getElementById("agent_model").value = m;
+    }
+    closeDialog("model_picker");
 }
 
 // ============================ 评测编排(WebSocket) ============================

@@ -23,8 +23,8 @@
             </div>
             <div class="flex items-center gap-2">
                 <label class="w-16 text-slate-600">Model</label>
-                <input id="target_model" value="gemini-3-flash" list="target_model_list" class="flex-1 border rounded px-2 py-1">
-                <datalist id="target_model_list"></datalist>
+                <input id="target_model" value="gemini-3-flash" class="flex-1 border rounded px-2 py-1">
+                <button type="button" onclick="openModelPicker('target')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs" title="选择模型">▼</button>
             </div>
             <div class="flex items-center gap-2">
                 <label class="w-16 text-slate-600">并发</label>
@@ -60,8 +60,8 @@
             </div>
             <div class="flex items-center gap-2">
                 <label class="w-16 text-slate-600">分析Model</label>
-                <input id="agent_model" value="gpt-4o-mini" list="agent_model_list" class="flex-1 border rounded px-2 py-1">
-                <datalist id="agent_model_list"></datalist>
+                <input id="agent_model" value="gpt-4o-mini" class="flex-1 border rounded px-2 py-1">
+                <button type="button" onclick="openModelPicker('agent')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs" title="选择模型">▼</button>
             </div>
         </div>
         <div class="flex gap-2 mt-2">
@@ -198,6 +198,18 @@
         <div id="detail_content" class="text-sm"></div>
         <div class="flex justify-end mt-3">
             <button onclick="closeDialog('detail_dialog')" class="bg-slate-200 px-4 py-1 rounded">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 模型选择浮层(替代 datalist,显示全部模型) -->
+<div id="model_picker" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="model_picker_title" class="text-lg font-bold mb-3">选择模型</h3>
+        <input id="model_search" placeholder="搜索模型..." class="w-full border rounded px-2 py-1 mb-2" oninput="filterModelList()">
+        <div id="model_list_box" class="border rounded max-h-80 overflow-y-auto text-sm"></div>
+        <div class="flex justify-end gap-2 mt-3">
+            <button onclick="closeDialog('model_picker')" class="bg-slate-200 px-4 py-1 rounded">取消</button>
         </div>
     </div>
 </div>

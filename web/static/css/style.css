@@ -160,3 +160,17 @@
 body {
     padding-bottom: 70px;
 }
+
+/* 模型选择浮层列表项 */
+.model-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    font-family: Consolas, monospace;
+}
+.model-item:hover {
+    background: #dbeafe;
+}
+.model-item:last-child {
+    border-bottom: none;
+}
