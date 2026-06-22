@@ -226,6 +226,18 @@ function renderResults() {
     body.innerHTML = "";
     results.forEach((r, i) => body.appendChild(buildResultRow(r, i)));
     document.getElementById("res_count").textContent = `结果: ${results.length}`;
+    updateStats();
+}
+
+// 更新顶部统计概览卡片
+function updateStats() {
+    const stats = { DANGEROUS_BYPASS: 0, SAFE_BYPASS: 0, BLOCKED: 0, REVIEW: 0 };
+    results.forEach(r => { if (stats.hasOwnProperty(r.verdict)) stats[r.verdict]++; });
+    document.getElementById("stat_danger").textContent = stats.DANGEROUS_BYPASS;
+    document.getElementById("stat_safe").textContent = stats.SAFE_BYPASS;
+    document.getElementById("stat_blocked").textContent = stats.BLOCKED;
+    document.getElementById("stat_review").textContent = stats.REVIEW;
+    document.getElementById("stat_total").textContent = results.length;
 }
 
 function buildResultRow(r, i) {
@@ -424,6 +436,7 @@ function handleWsMessage(msg) {
         results.push(msg.result);
         document.getElementById("res_body").appendChild(buildResultRow(msg.result, results.length - 1));
         document.getElementById("res_count").textContent = `结果: ${results.length}`;
+        updateStats();
         // 该样本已完成,从流式输出区移除
         if (msg.idx !== undefined && streamLines.hasOwnProperty(msg.idx)) {
             delete streamLines[msg.idx];

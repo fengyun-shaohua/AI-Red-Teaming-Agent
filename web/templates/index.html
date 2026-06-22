@@ -3,184 +3,240 @@
 
 {% block body %}
 <!-- 顶部标题栏 -->
-<header class="bg-gradient-to-r from-slate-900 to-blue-900 text-white px-6 py-3 shadow-md">
-    <h1 class="text-xl font-bold">红队自动化测试系统 v3.2</h1>
-    <p class="text-blue-200 text-sm">AI Red Teaming Agent | 大模型安全评估平台</p>
+<header class="app-header text-white px-6 py-4 shadow-lg">
+    <div class="max-w-7xl mx-auto flex items-center justify-between relative z-10">
+        <div>
+            <h1 class="text-2xl font-bold">🛡️ 大模型红队安全评测系统</h1>
+            <p class="text-indigo-200 text-sm mt-0.5">AI Red Teaming Agent · LangChain 驱动 · 越狱测试与安全评估平台</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-indigo-200">
+            <span class="px-2 py-1 bg-white/10 rounded-full">v4.1</span>
+            <span class="px-2 py-1 bg-white/10 rounded-full">Web</span>
+        </div>
+    </div>
 </header>
 
-<div class="max-w-7xl mx-auto p-4 space-y-3">
-    <!-- 目标模型配置 -->
-    <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="text-sm font-bold text-blue-700 mb-2 border-b pb-1">API 配置</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-            <div class="flex items-center gap-2">
-                <label class="w-16 text-slate-600">Base URL</label>
-                <input id="target_url" value="http://localhost:8045/v1" class="flex-1 border rounded px-2 py-1">
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="w-16 text-slate-600">API Key</label>
-                <input id="target_key" type="password" placeholder="留空则离线模拟" class="flex-1 border rounded px-2 py-1">
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="w-16 text-slate-600">Model</label>
-                <input id="target_model" value="gemini-3-flash" class="flex-1 border rounded px-2 py-1">
-                <button type="button" onclick="openModelPicker('target')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs" title="选择模型">▼</button>
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="w-16 text-slate-600">并发</label>
-                <input id="concurrency" type="number" value="3" min="1" max="10" class="w-20 border rounded px-2 py-1">
-                <label class="text-slate-600 ml-2">超时(秒)</label>
-                <input id="timeout" type="number" value="120" min="10" max="600" class="w-20 border rounded px-2 py-1" title="单次请求超时,长响应建议≥120">
-                <span id="conn_status" class="text-green-600 text-xs ml-2"></span>
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="flex items-center gap-1 text-xs text-slate-600" title="流式传输:边接收边显示,避免长响应整体超时">
-                    <input id="use_stream" type="checkbox" class="w-3 h-3"> 流式传输
-                </label>
-                <span class="text-xs text-slate-400">启用后实时显示模型输出,且长响应不会因 read timeout 断开</span>
-            </div>
+<div class="max-w-7xl mx-auto p-4 space-y-4">
+    <!-- 统计概览卡片 -->
+    <section class="grid grid-cols-2 md:grid-cols-5 gap-3" id="stat_overview">
+        <div class="stat-card danger">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-num" id="stat_danger">0</div>
+            <div class="stat-label">危险绕过</div>
         </div>
-        <div class="flex gap-2 mt-2">
-            <button onclick="testConnection()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">测试连接</button>
-            <button onclick="fetchModels('target')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">获取模型</button>
+        <div class="stat-card warning">
+            <div class="stat-icon">~</div>
+            <div class="stat-num" id="stat_safe">0</div>
+            <div class="stat-label">安全绕过</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-icon">✓</div>
+            <div class="stat-num" id="stat_blocked">0</div>
+            <div class="stat-label">已拦截</div>
+        </div>
+        <div class="stat-card gray">
+            <div class="stat-icon">?</div>
+            <div class="stat-num" id="stat_review">0</div>
+            <div class="stat-label">待复核</div>
+        </div>
+        <div class="stat-card info">
+            <div class="stat-icon">Σ</div>
+            <div class="stat-num" id="stat_total">0</div>
+            <div class="stat-label">测试总数</div>
+        </div>
+    </section>
+
+    <!-- 目标模型配置 -->
+    <section class="config-card">
+        <div class="config-card-header">
+            <span class="icon">🎯</span>
+            <h2>目标模型配置</h2>
+        </div>
+        <div class="config-card-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div class="flex items-center gap-2">
+                    <label class="w-20 text-slate-500 shrink-0">Base URL</label>
+                    <input id="target_url" value="http://localhost:8045/v1" class="input-field flex-1">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="w-20 text-slate-500 shrink-0">API Key</label>
+                    <input id="target_key" type="password" placeholder="留空则离线模拟" class="input-field flex-1">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="w-20 text-slate-500 shrink-0">Model</label>
+                    <input id="target_model" value="gemini-3-flash" class="input-field flex-1">
+                    <button type="button" onclick="openModelPicker('target')" class="btn btn-ghost btn-sm" title="选择模型">▼</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="w-20 text-slate-500 shrink-0">并发 / 超时</label>
+                    <input id="concurrency" type="number" value="3" min="1" max="10" class="input-field w-16">
+                    <input id="timeout" type="number" value="120" min="10" max="600" class="input-field w-16" title="单次请求超时(秒)">
+                    <span class="text-xs text-slate-400">秒</span>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-4 mt-3">
+                <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer" title="流式传输:边接收边显示,避免长响应整体超时">
+                    <input id="use_stream" type="checkbox" class="w-4 h-4"> 
+                    <span class="font-medium">⚡ 流式传输</span>
+                </label>
+                <span class="text-xs text-slate-400">实时显示模型输出,长响应不会因 read timeout 断开</span>
+                <span id="conn_status" class="text-xs ml-auto"></span>
+            </div>
+            <div class="flex gap-2 mt-3">
+                <button onclick="testConnection()" class="btn btn-ghost btn-sm">🔗 测试连接</button>
+                <button onclick="fetchModels('target')" class="btn btn-ghost btn-sm">📋 获取模型</button>
+            </div>
         </div>
     </section>
 
     <!-- Agent 智能分析配置 -->
-    <section class="bg-white rounded-lg shadow p-4">
-        <h2 class="text-sm font-bold text-blue-700 mb-2 border-b pb-1">
-            Agent 智能分析(可选)
-        </h2>
-        <div class="flex items-center gap-4 mb-2">
-            <label class="flex items-center gap-2 text-sm font-medium text-blue-700">
-                <input id="use_agent" type="checkbox" class="w-4 h-4"> 启用 Agent 自动判定
-            </label>
-            <span class="text-xs text-slate-400">启用后将调用判定 Agent 对每次测试结果进行智能判定,替代规则匹配</span>
+    <section class="config-card">
+        <div class="config-card-header">
+            <span class="icon" style="background:#8b5cf6">🤖</span>
+            <h2>Agent 智能分析(可选)</h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-            <div class="flex items-center gap-2">
-                <label class="w-16 text-slate-600">分析URL</label>
-                <input id="agent_url" value="http://localhost:8045/v1" class="flex-1 border rounded px-2 py-1">
+        <div class="config-card-body">
+            <div class="flex items-center gap-4 mb-3">
+                <label class="flex items-center gap-2 text-sm font-medium text-violet-700 cursor-pointer">
+                    <input id="use_agent" type="checkbox" class="w-4 h-4"> 启用 Agent 自动判定
+                </label>
+                <span class="text-xs text-slate-400">启用后将调用判定 Agent 对每次测试结果进行智能判定,替代规则匹配</span>
             </div>
-            <div class="flex items-center gap-2">
-                <label class="w-16 text-slate-600">分析Key</label>
-                <input id="agent_key" type="password" class="flex-1 border rounded px-2 py-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                <div class="flex items-center gap-2">
+                    <label class="w-16 text-slate-500 shrink-0">分析URL</label>
+                    <input id="agent_url" value="http://localhost:8045/v1" class="input-field flex-1">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="w-16 text-slate-500 shrink-0">分析Key</label>
+                    <input id="agent_key" type="password" class="input-field flex-1">
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="w-16 text-slate-500 shrink-0">分析Model</label>
+                    <input id="agent_model" value="gpt-4o-mini" class="input-field flex-1">
+                    <button type="button" onclick="openModelPicker('agent')" class="btn btn-ghost btn-sm" title="选择模型">▼</button>
+                </div>
             </div>
-            <div class="flex items-center gap-2">
-                <label class="w-16 text-slate-600">分析Model</label>
-                <input id="agent_model" value="gpt-4o-mini" class="flex-1 border rounded px-2 py-1">
-                <button type="button" onclick="openModelPicker('agent')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs" title="选择模型">▼</button>
+            <div class="flex gap-2 mt-3">
+                <button onclick="fetchModels('agent')" class="btn btn-ghost btn-sm">📋 获取模型</button>
             </div>
-        </div>
-        <div class="flex gap-2 mt-2">
-            <button onclick="fetchModels('agent')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">获取模型</button>
         </div>
     </section>
 
     <!-- Tab 导航 -->
-    <nav class="flex gap-1 border-b">
-        <button data-tab="templates" class="tab-btn active px-4 py-2 text-sm font-medium">测试模板</button>
-        <button data-tab="custom" class="tab-btn px-4 py-2 text-sm font-medium">自定义输入</button>
-        <button data-tab="payloads" class="tab-btn px-4 py-2 text-sm font-medium">测试载荷</button>
-        <button data-tab="results" class="tab-btn px-4 py-2 text-sm font-medium">测试结果</button>
+    <nav class="tab-nav">
+        <button data-tab="templates" class="tab-btn active">📝 测试模板</button>
+        <button data-tab="custom" class="tab-btn">💬 自定义输入</button>
+        <button data-tab="payloads" class="tab-btn">📦 测试载荷</button>
+        <button data-tab="results" class="tab-btn">📊 测试结果</button>
     </nav>
 
     <!-- 模板 Tab -->
-    <section id="tab-templates" class="tab-panel bg-white rounded-lg shadow p-4">
-        <div class="flex items-center gap-2 mb-3">
-            <button onclick="toggleAll('tpl',true)" class="bg-blue-50 px-2 py-1 rounded text-xs">全选</button>
-            <button onclick="toggleAll('tpl',false)" class="bg-blue-50 px-2 py-1 rounded text-xs">取消</button>
-            <span class="border-l h-5 mx-1"></span>
-            <button onclick="openTplDialog()" class="bg-green-600 text-white px-2 py-1 rounded text-xs">添加模板</button>
-            <button onclick="delSelectedTpl()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">删除选中</button>
-            <span id="tpl_count" class="ml-auto text-xs text-blue-700 font-bold"></span>
+    <section id="tab-templates" class="tab-panel config-card">
+        <div class="config-card-body">
+            <div class="flex items-center gap-2 mb-3 flex-wrap">
+                <button onclick="toggleAll('tpl',true)" class="btn btn-ghost btn-sm">全选</button>
+                <button onclick="toggleAll('tpl',false)" class="btn btn-ghost btn-sm">取消</button>
+                <span class="border-l h-5 mx-1"></span>
+                <button onclick="openTplDialog()" class="btn btn-success btn-sm">+ 添加模板</button>
+                <button onclick="delSelectedTpl()" class="btn btn-danger btn-sm">删除选中</button>
+                <span id="tpl_count" class="ml-auto text-xs text-indigo-600 font-bold"></span>
+            </div>
+            <div id="tpl_list" class="space-y-2 max-h-96 overflow-y-auto"></div>
         </div>
-        <div id="tpl_list" class="space-y-1 max-h-96 overflow-y-auto"></div>
     </section>
 
     <!-- 自定义输入 Tab -->
-    <section id="tab-custom" class="tab-panel bg-white rounded-lg shadow p-4 hidden">
-        <div class="mb-2">
-            <label class="text-xs text-slate-500 block mb-1">在此输入任意 Prompt,可直接发送给目标模型测试</label>
-            <textarea id="custom_text" rows="4" class="w-full border rounded p-2 text-sm font-mono" placeholder="在此输入自定义 Prompt..."></textarea>
+    <section id="tab-custom" class="tab-panel config-card hidden">
+        <div class="config-card-body">
+            <div class="mb-3">
+                <label class="text-xs text-slate-500 block mb-1">在此输入任意 Prompt,可直接发送给目标模型测试</label>
+                <textarea id="custom_text" rows="4" class="input-field w-full font-mono" placeholder="在此输入自定义 Prompt..."></textarea>
+            </div>
+            <div class="flex gap-2 mb-4">
+                <button onclick="addCustomInput()" class="btn btn-primary btn-sm">添加为载荷</button>
+                <button onclick="document.getElementById('custom_text').value=''" class="btn btn-ghost btn-sm">清空</button>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-sm font-medium text-slate-600">🕘 历史记录</span>
+                <button onclick="clearCustomHistory()" class="btn btn-ghost btn-sm ml-auto">清除</button>
+            </div>
+            <div id="custom_history" class="space-y-2 max-h-60 overflow-y-auto"></div>
         </div>
-        <div class="flex gap-2 mb-3">
-            <button onclick="addCustomInput()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">添加为载荷</button>
-            <button onclick="document.getElementById('custom_text').value=''" class="bg-blue-50 px-3 py-1 rounded text-sm">清空</button>
-        </div>
-        <div class="flex items-center gap-2 mb-2">
-            <span class="text-sm font-medium text-slate-600">历史记录</span>
-            <button onclick="clearCustomHistory()" class="bg-blue-50 px-2 py-0.5 rounded text-xs ml-auto">清除</button>
-        </div>
-        <div id="custom_history" class="space-y-1 max-h-60 overflow-y-auto text-sm"></div>
     </section>
 
     <!-- 载荷 Tab -->
-    <section id="tab-payloads" class="tab-panel bg-white rounded-lg shadow p-4 hidden">
-        <div class="flex items-center gap-2 mb-3">
-            <button onclick="toggleAll('pld',true)" class="bg-blue-50 px-2 py-1 rounded text-xs">全选</button>
-            <button onclick="toggleAll('pld',false)" class="bg-blue-50 px-2 py-1 rounded text-xs">取消</button>
-            <span class="border-l h-5 mx-1"></span>
-            <button onclick="openPldDialog()" class="bg-green-600 text-white px-2 py-1 rounded text-xs">添加载荷</button>
-            <button onclick="delSelectedPld()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">删除选中</button>
-            <span id="pld_count" class="ml-auto text-xs text-blue-700 font-bold"></span>
+    <section id="tab-payloads" class="tab-panel config-card hidden">
+        <div class="config-card-body">
+            <div class="flex items-center gap-2 mb-3 flex-wrap">
+                <button onclick="toggleAll('pld',true)" class="btn btn-ghost btn-sm">全选</button>
+                <button onclick="toggleAll('pld',false)" class="btn btn-ghost btn-sm">取消</button>
+                <span class="border-l h-5 mx-1"></span>
+                <button onclick="openPldDialog()" class="btn btn-success btn-sm">+ 添加载荷</button>
+                <button onclick="delSelectedPld()" class="btn btn-danger btn-sm">删除选中</button>
+                <span id="pld_count" class="ml-auto text-xs text-indigo-600 font-bold"></span>
+            </div>
+            <div id="pld_list" class="space-y-2 max-h-96 overflow-y-auto"></div>
         </div>
-        <div id="pld_list" class="space-y-1 max-h-96 overflow-y-auto"></div>
     </section>
 
     <!-- 结果 Tab -->
-    <section id="tab-results" class="tab-panel bg-white rounded-lg shadow p-4 hidden">
-        <div class="flex items-center gap-2 mb-3">
-            <button onclick="location.href='/api/report/html'" class="bg-blue-50 px-3 py-1 rounded text-sm">导出HTML</button>
-            <button onclick="location.href='/api/report/json'" class="bg-blue-50 px-3 py-1 rounded text-sm">导出JSON</button>
-            <button onclick="clearResults()" class="bg-blue-50 px-3 py-1 rounded text-sm">清空结果</button>
-            <span id="res_count" class="ml-auto text-xs text-blue-700 font-bold"></span>
-        </div>
-        <!-- 流式实时输出区(流式模式时显示) -->
-        <div id="stream_box" class="hidden mb-3 border rounded p-2 bg-slate-50 max-h-48 overflow-y-auto">
-            <div class="text-xs text-slate-400 mb-1">实时输出(流式传输中):</div>
-            <div id="stream_content" class="text-xs font-mono whitespace-pre-wrap text-slate-700"></div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-slate-100 text-slate-600">
-                    <tr>
-                        <th class="px-2 py-2 text-left">测试模板</th>
-                        <th class="px-2 py-2 text-left">类别</th>
-                        <th class="px-2 py-2 text-left">测试载荷</th>
-                        <th class="px-2 py-2 text-left">判定结果</th>
-                        <th class="px-2 py-2 text-left">模型响应</th>
-                    </tr>
-                </thead>
-                <tbody id="res_body"></tbody>
-            </table>
+    <section id="tab-results" class="tab-panel config-card hidden">
+        <div class="config-card-body">
+            <div class="flex items-center gap-2 mb-3 flex-wrap">
+                <button onclick="location.href='/api/report/html'" class="btn btn-ghost btn-sm">📄 导出HTML</button>
+                <button onclick="location.href='/api/report/json'" class="btn btn-ghost btn-sm">📋 导出JSON</button>
+                <button onclick="clearResults()" class="btn btn-danger btn-sm">清空结果</button>
+                <span id="res_count" class="ml-auto text-xs text-indigo-600 font-bold"></span>
+            </div>
+            <!-- 流式实时输出区 -->
+            <div id="stream_box" class="hidden mb-3 border rounded-xl p-3 max-h-48 overflow-y-auto">
+                <div class="text-xs text-violet-500 mb-1 font-medium">⚡ 实时输出(流式传输中)</div>
+                <div id="stream_content" class="text-xs font-mono whitespace-pre-wrap text-slate-700"></div>
+            </div>
+            <div class="overflow-x-auto rounded-lg border border-slate-200">
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>测试模板</th>
+                            <th>类别</th>
+                            <th>测试载荷</th>
+                            <th>判定结果</th>
+                            <th>模型响应</th>
+                        </tr>
+                    </thead>
+                    <tbody id="res_body"></tbody>
+                </table>
+            </div>
         </div>
     </section>
 </div>
 
 <!-- 底部操作栏 -->
-<footer class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg px-6 py-2 flex items-center gap-3">
-    <button id="run_btn" onclick="startEvaluate()" class="bg-blue-600 text-white px-5 py-2 rounded font-bold hover:bg-blue-700">开始测试</button>
-    <button id="stop_btn" onclick="stopEvaluate()" disabled class="bg-slate-400 text-white px-5 py-2 rounded font-bold">停止</button>
+<footer class="app-footer fixed bottom-0 left-0 right-0 px-6 py-3 flex items-center gap-3">
+    <button id="run_btn" onclick="startEvaluate()" class="btn btn-primary">▶ 开始测试</button>
+    <button id="stop_btn" onclick="stopEvaluate()" disabled class="btn btn-ghost">■ 停止</button>
     <div class="flex-1 mx-4">
-        <div class="bg-slate-200 rounded-full h-2 overflow-hidden">
-            <div id="progress_bar" class="bg-blue-600 h-full transition-all duration-300" style="width:0%"></div>
+        <div class="progress-track">
+            <div id="progress_bar" class="progress-fill" style="width:0%"></div>
         </div>
     </div>
-    <span id="status_text" class="text-blue-700 font-bold">就绪</span>
+    <span id="status_text" class="text-indigo-600 font-semibold text-sm whitespace-nowrap">就绪</span>
 </footer>
 
 <!-- 模板编辑对话框 -->
 <div id="tpl_dialog" class="modal hidden">
     <div class="modal-content">
-        <h3 id="tpl_dialog_title" class="text-lg font-bold mb-3">添加测试模板</h3>
-        <input id="tpl_name" placeholder="名称" class="w-full border rounded px-2 py-1 mb-2">
-        <input id="tpl_category" placeholder="类别" class="w-full border rounded px-2 py-1 mb-2">
-        <input id="tpl_desc" placeholder="描述" class="w-full border rounded px-2 py-1 mb-2">
-        <textarea id="tpl_content" rows="6" placeholder="模板内容 (用 {payload} 标记载荷位置)" class="w-full border rounded p-2 font-mono text-sm mb-3"></textarea>
-        <div class="flex justify-end gap-2">
-            <button onclick="closeDialog('tpl_dialog')" class="bg-slate-200 px-4 py-1 rounded">取消</button>
-            <button onclick="saveTpl()" class="bg-blue-600 text-white px-4 py-1 rounded">保存</button>
+        <h3 id="tpl_dialog_title" class="text-lg font-bold mb-4 text-slate-800">添加测试模板</h3>
+        <div class="space-y-2">
+            <input id="tpl_name" placeholder="名称" class="input-field w-full">
+            <input id="tpl_category" placeholder="类别" class="input-field w-full">
+            <input id="tpl_desc" placeholder="描述" class="input-field w-full">
+            <textarea id="tpl_content" rows="6" placeholder="模板内容 (用 {payload} 标记载荷位置)" class="input-field w-full font-mono"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+            <button onclick="closeDialog('tpl_dialog')" class="btn btn-ghost">取消</button>
+            <button onclick="saveTpl()" class="btn btn-primary">保存</button>
         </div>
     </div>
 </div>
@@ -188,10 +244,10 @@
 <!-- 载荷编辑对话框 -->
 <div id="pld_dialog" class="modal hidden">
     <div class="modal-content">
-        <h3 id="pld_dialog_title" class="text-lg font-bold mb-3">添加测试载荷</h3>
-        <textarea id="pld_content" rows="3" placeholder="载荷内容" class="w-full border rounded p-2 text-sm mb-2"></textarea>
+        <h3 id="pld_dialog_title" class="text-lg font-bold mb-4 text-slate-800">添加测试载荷</h3>
+        <textarea id="pld_content" rows="3" placeholder="载荷内容" class="input-field w-full mb-3"></textarea>
         <label class="text-sm text-slate-600">风险级别:
-            <select id="pld_risk" class="border rounded px-2 py-1">
+            <select id="pld_risk" class="input-field">
                 <option value="low">low</option>
                 <option value="medium" selected>medium</option>
                 <option value="high">high</option>
@@ -199,35 +255,35 @@
             </select>
         </label>
         <div class="flex justify-end gap-2 mt-4">
-            <button onclick="closeDialog('pld_dialog')" class="bg-slate-200 px-4 py-1 rounded">取消</button>
-            <button onclick="savePld()" class="bg-blue-600 text-white px-4 py-1 rounded">保存</button>
+            <button onclick="closeDialog('pld_dialog')" class="btn btn-ghost">取消</button>
+            <button onclick="savePld()" class="btn btn-primary">保存</button>
         </div>
     </div>
 </div>
 
 <!-- 结果详情对话框 -->
 <div id="detail_dialog" class="modal hidden">
-    <div class="modal-content max-w-3xl">
+    <div class="modal-content" style="max-width:768px">
         <div id="detail_content" class="text-sm"></div>
-        <div class="flex justify-end mt-3">
-            <button onclick="closeDialog('detail_dialog')" class="bg-slate-200 px-4 py-1 rounded">关闭</button>
+        <div class="flex justify-end mt-4">
+            <button onclick="closeDialog('detail_dialog')" class="btn btn-ghost">关闭</button>
         </div>
     </div>
 </div>
 
-<!-- 模型选择浮层(替代 datalist,显示全部模型) -->
+<!-- 模型选择浮层 -->
 <div id="model_picker" class="modal hidden">
     <div class="modal-content">
-        <h3 id="model_picker_title" class="text-lg font-bold mb-3">选择模型</h3>
-        <input id="model_search" placeholder="搜索模型..." class="w-full border rounded px-2 py-1 mb-2" oninput="filterModelList()">
-        <div id="model_list_box" class="border rounded max-h-80 overflow-y-auto text-sm"></div>
+        <h3 id="model_picker_title" class="text-lg font-bold mb-3 text-slate-800">选择模型</h3>
+        <input id="model_search" placeholder="🔍 搜索模型..." class="input-field w-full mb-3" oninput="filterModelList()">
+        <div id="model_list_box" class="border border-slate-200 rounded-lg max-h-80 overflow-y-auto"></div>
         <div class="flex justify-end gap-2 mt-3">
-            <button onclick="closeDialog('model_picker')" class="bg-slate-200 px-4 py-1 rounded">取消</button>
+            <button onclick="closeDialog('model_picker')" class="btn btn-ghost">取消</button>
         </div>
     </div>
 </div>
 
-<!-- 初始数据(服务端注入) -->
+<!-- 初始数据 -->
 <script>
     window.__INITIAL__ = {
         templates: {{ templates | tojson }},
