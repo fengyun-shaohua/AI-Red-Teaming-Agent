@@ -375,6 +375,7 @@ function startEvaluate() {
         model_name: document.getElementById("target_model").value.trim(),
         concurrency: parseInt(document.getElementById("concurrency").value) || 3,
         timeout: parseInt(document.getElementById("timeout").value) || 120,
+        stream: document.getElementById("use_stream").checked,
         use_agent: useAgent,
         agent_url: document.getElementById("agent_url").value.trim(),
         agent_key: document.getElementById("agent_key").value.trim(),
@@ -406,13 +407,28 @@ function startEvaluate() {
     ws.onclose = () => resetButtons();
 }
 
+// 流式输出:每个 idx 一行,记录累积文本(支持并发交错)
+let streamLines = {};
+
 function handleWsMessage(msg) {
     if (msg.type === "start") {
         setStatus(`测试中... 0/${msg.total}`, "#1d4ed8");
+        streamLines = {};
+        document.getElementById("stream_box").classList.remove("hidden");
+        document.getElementById("stream_content").innerHTML = "";
+    } else if (msg.type === "chunk") {
+        // 流式 chunk:更新对应 idx 的累积文本行
+        streamLines[msg.idx] = { name: msg.jailbreak_name, text: msg.accumulated };
+        renderStreamBox();
     } else if (msg.type === "progress") {
         results.push(msg.result);
         document.getElementById("res_body").appendChild(buildResultRow(msg.result, results.length - 1));
         document.getElementById("res_count").textContent = `结果: ${results.length}`;
+        // 该样本已完成,从流式输出区移除
+        if (msg.idx !== undefined && streamLines.hasOwnProperty(msg.idx)) {
+            delete streamLines[msg.idx];
+            renderStreamBox();
+        }
         const pct = msg.total ? (msg.done / msg.total * 100) : 0;
         document.getElementById("progress_bar").style.width = pct + "%";
         setStatus(`测试中... ${msg.done}/${msg.total}`, "#1d4ed8");
@@ -420,14 +436,31 @@ function handleWsMessage(msg) {
         const pct = msg.total ? 100 : 0;
         document.getElementById("progress_bar").style.width = pct + "%";
         setStatus(msg.stopped ? `已停止,共 ${msg.count} 条` : `完成: ${msg.count} 条结果`, "#16a34a");
+        document.getElementById("stream_box").classList.add("hidden");
+        streamLines = {};
         resetButtons();
         // 拉取最终完整结果(确保与服务端一致)
         api("GET", "/api/results").then(r => { results = r; renderResults(); });
     } else if (msg.type === "error") {
         setStatus(msg.message || "错误", "#dc2626");
         alert(msg.message || "评测出错");
+        document.getElementById("stream_box").classList.add("hidden");
         resetButtons();
     }
+}
+
+function renderStreamBox() {
+    const box = document.getElementById("stream_content");
+    const lines = Object.values(streamLines);
+    if (!lines.length) {
+        box.innerHTML = '<span class="text-slate-300">等待模型响应...</span>';
+        return;
+    }
+    box.innerHTML = lines.map(l =>
+        `<div class="border-b border-slate-200 py-1"><span class="text-blue-600 font-bold">[${esc(l.name)}]</span> <span class="text-slate-600">${esc(l.text.slice(-200))}</span></div>`
+    ).join("");
+    // 自动滚到底部
+    box.parentElement.scrollTop = box.parentElement.scrollHeight;
 }
 
 async function stopEvaluate() {

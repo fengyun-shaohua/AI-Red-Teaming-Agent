@@ -264,6 +264,7 @@ async def ws_evaluate(websocket: WebSocket):
             concurrency = max(1, int(config.get("concurrency", 3)))
             timeout = max(10, int(config.get("timeout", 120)))
             use_agent = bool(config.get("use_agent", False))
+            use_stream = bool(config.get("stream", False))
             agent_url = (config.get("agent_url") or "").strip()
             agent_key = (config.get("agent_key") or "").strip()
             agent_model = (config.get("agent_model") or "").strip()
@@ -332,7 +333,15 @@ async def ws_evaluate(websocket: WebSocket):
                         if _current_task["stop"]:
                             return None
                         idx, sample = item
-                        response = agent._call_target(sample)
+                        if use_stream:
+                            # 流式:边接收边推送 chunk(解决长响应 read timeout)
+                            def on_chunk(piece, accumulated):
+                                send({"type": "chunk", "idx": idx,
+                                      "jailbreak_name": sample["jailbreak_name"],
+                                      "chunk": piece, "accumulated": accumulated})
+                            response = agent._call_target_stream(sample, on_chunk=on_chunk)
+                        else:
+                            response = agent._call_target(sample)
                         return idx, make_result(sample, response)
 
                     futures = {pool.submit(run_one, it): it[0] for it in enumerate(samples)}
@@ -348,7 +357,7 @@ async def ws_evaluate(websocket: WebSocket):
                             if done % 3 == 0 or done >= total:
                                 db.save_results(results)
                                 send({"type": "progress", "done": done, "total": total,
-                                      "result": result})
+                                      "idx": idx, "result": result})
                 with results_lock:
                     db.save_results(results)
             else:

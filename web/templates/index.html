@@ -33,6 +33,12 @@
                 <input id="timeout" type="number" value="120" min="10" max="600" class="w-20 border rounded px-2 py-1" title="单次请求超时,长响应建议≥120">
                 <span id="conn_status" class="text-green-600 text-xs ml-2"></span>
             </div>
+            <div class="flex items-center gap-2">
+                <label class="flex items-center gap-1 text-xs text-slate-600" title="流式传输:边接收边显示,避免长响应整体超时">
+                    <input id="use_stream" type="checkbox" class="w-3 h-3"> 流式传输
+                </label>
+                <span class="text-xs text-slate-400">启用后实时显示模型输出,且长响应不会因 read timeout 断开</span>
+            </div>
         </div>
         <div class="flex gap-2 mt-2">
             <button onclick="testConnection()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">测试连接</button>
@@ -129,6 +135,11 @@
             <button onclick="location.href='/api/report/json'" class="bg-blue-50 px-3 py-1 rounded text-sm">导出JSON</button>
             <button onclick="clearResults()" class="bg-blue-50 px-3 py-1 rounded text-sm">清空结果</button>
             <span id="res_count" class="ml-auto text-xs text-blue-700 font-bold"></span>
+        </div>
+        <!-- 流式实时输出区(流式模式时显示) -->
+        <div id="stream_box" class="hidden mb-3 border rounded p-2 bg-slate-50 max-h-48 overflow-y-auto">
+            <div class="text-xs text-slate-400 mb-1">实时输出(流式传输中):</div>
+            <div id="stream_content" class="text-xs font-mono whitespace-pre-wrap text-slate-700"></div>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">

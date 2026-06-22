@@ -72,6 +72,33 @@ class RedTeamAgent:
         except Exception as e:
             return "[API Exception: %s]" % str(e)
 
+    def _call_target_stream(self, sample, on_chunk=None):
+        """流式调用目标模型。边接收 token 边拼接,返回完整响应字符串。
+
+        流式模式下 httpx 的 read timeout 只作用于两个 chunk 之间的间隔,
+        而非总耗时,因此对长响应不会整体超时(模型持续吐 token 即可)。
+
+        on_chunk: 可选回调 on_chunk(chunk_text, accumulated_text),每收到一段
+                  token 就触发,用于实时推送给前端展示。
+        异常降级为错误文本,与 _call_target 一致。
+        """
+        try:
+            llm = self._get_target_llm()
+            prompt = sample.get("prompt", "")
+            messages = sample.get("messages", [{"role": "user", "content": prompt}])
+            lc_messages = [HumanMessage(content=m["content"]) if m["role"] == "user"
+                           else m for m in messages]
+            parts = []
+            for chunk in llm.stream(lc_messages):
+                piece = chunk.content if hasattr(chunk, "content") else str(chunk)
+                if piece:
+                    parts.append(piece)
+                    if on_chunk:
+                        on_chunk(piece, "".join(parts))
+            return "".join(parts)
+        except Exception as e:
+            return "[API Exception: %s]" % str(e)
+
     def run_evaluation(self, payloads=None, templates=None):
         """执行评测。在线模式用线程池并发调用目标模型;离线模式随机模拟响应。"""
         if payloads is None: payloads = DEFAULT_PAYLOADS
