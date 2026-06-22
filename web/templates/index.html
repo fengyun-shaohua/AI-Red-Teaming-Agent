@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}大模型红队评测工具{% endblock %}
+
+{% block body %}
+<!-- 顶部标题栏 -->
+<header class="bg-gradient-to-r from-slate-900 to-blue-900 text-white px-6 py-3 shadow-md">
+    <h1 class="text-xl font-bold">红队自动化测试系统 v3.2</h1>
+    <p class="text-blue-200 text-sm">AI Red Teaming Agent | 大模型安全评估平台</p>
+</header>
+
+<div class="max-w-7xl mx-auto p-4 space-y-3">
+    <!-- 目标模型配置 -->
+    <section class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-sm font-bold text-blue-700 mb-2 border-b pb-1">API 配置</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+            <div class="flex items-center gap-2">
+                <label class="w-16 text-slate-600">Base URL</label>
+                <input id="target_url" value="http://localhost:8045/v1" class="flex-1 border rounded px-2 py-1">
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="w-16 text-slate-600">API Key</label>
+                <input id="target_key" type="password" placeholder="留空则离线模拟" class="flex-1 border rounded px-2 py-1">
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="w-16 text-slate-600">Model</label>
+                <input id="target_model" value="gemini-3-flash" list="target_model_list" class="flex-1 border rounded px-2 py-1">
+                <datalist id="target_model_list"></datalist>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="w-16 text-slate-600">并发</label>
+                <input id="concurrency" type="number" value="3" min="1" max="10" class="w-20 border rounded px-2 py-1">
+                <span id="conn_status" class="text-green-600 text-xs ml-2"></span>
+            </div>
+        </div>
+        <div class="flex gap-2 mt-2">
+            <button onclick="testConnection()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">测试连接</button>
+            <button onclick="fetchModels('target')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">获取模型</button>
+        </div>
+    </section>
+
+    <!-- Agent 智能分析配置 -->
+    <section class="bg-white rounded-lg shadow p-4">
+        <h2 class="text-sm font-bold text-blue-700 mb-2 border-b pb-1">
+            Agent 智能分析(可选)
+        </h2>
+        <div class="flex items-center gap-4 mb-2">
+            <label class="flex items-center gap-2 text-sm font-medium text-blue-700">
+                <input id="use_agent" type="checkbox" class="w-4 h-4"> 启用 Agent 自动判定
+            </label>
+            <span class="text-xs text-slate-400">启用后将调用判定 Agent 对每次测试结果进行智能判定,替代规则匹配</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+            <div class="flex items-center gap-2">
+                <label class="w-16 text-slate-600">分析URL</label>
+                <input id="agent_url" value="http://localhost:8045/v1" class="flex-1 border rounded px-2 py-1">
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="w-16 text-slate-600">分析Key</label>
+                <input id="agent_key" type="password" class="flex-1 border rounded px-2 py-1">
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="w-16 text-slate-600">分析Model</label>
+                <input id="agent_model" value="gpt-4o-mini" list="agent_model_list" class="flex-1 border rounded px-2 py-1">
+                <datalist id="agent_model_list"></datalist>
+            </div>
+        </div>
+        <div class="flex gap-2 mt-2">
+            <button onclick="fetchModels('agent')" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">获取模型</button>
+        </div>
+    </section>
+
+    <!-- Tab 导航 -->
+    <nav class="flex gap-1 border-b">
+        <button data-tab="templates" class="tab-btn active px-4 py-2 text-sm font-medium">测试模板</button>
+        <button data-tab="custom" class="tab-btn px-4 py-2 text-sm font-medium">自定义输入</button>
+        <button data-tab="payloads" class="tab-btn px-4 py-2 text-sm font-medium">测试载荷</button>
+        <button data-tab="results" class="tab-btn px-4 py-2 text-sm font-medium">测试结果</button>
+    </nav>
+
+    <!-- 模板 Tab -->
+    <section id="tab-templates" class="tab-panel bg-white rounded-lg shadow p-4">
+        <div class="flex items-center gap-2 mb-3">
+            <button onclick="toggleAll('tpl',true)" class="bg-blue-50 px-2 py-1 rounded text-xs">全选</button>
+            <button onclick="toggleAll('tpl',false)" class="bg-blue-50 px-2 py-1 rounded text-xs">取消</button>
+            <span class="border-l h-5 mx-1"></span>
+            <button onclick="openTplDialog()" class="bg-green-600 text-white px-2 py-1 rounded text-xs">添加模板</button>
+            <button onclick="delSelectedTpl()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">删除选中</button>
+            <span id="tpl_count" class="ml-auto text-xs text-blue-700 font-bold"></span>
+        </div>
+        <div id="tpl_list" class="space-y-1 max-h-96 overflow-y-auto"></div>
+    </section>
+
+    <!-- 自定义输入 Tab -->
+    <section id="tab-custom" class="tab-panel bg-white rounded-lg shadow p-4 hidden">
+        <div class="mb-2">
+            <label class="text-xs text-slate-500 block mb-1">在此输入任意 Prompt,可直接发送给目标模型测试</label>
+            <textarea id="custom_text" rows="4" class="w-full border rounded p-2 text-sm font-mono" placeholder="在此输入自定义 Prompt..."></textarea>
+        </div>
+        <div class="flex gap-2 mb-3">
+            <button onclick="addCustomInput()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm">添加为载荷</button>
+            <button onclick="document.getElementById('custom_text').value=''" class="bg-blue-50 px-3 py-1 rounded text-sm">清空</button>
+        </div>
+        <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-medium text-slate-600">历史记录</span>
+            <button onclick="clearCustomHistory()" class="bg-blue-50 px-2 py-0.5 rounded text-xs ml-auto">清除</button>
+        </div>
+        <div id="custom_history" class="space-y-1 max-h-60 overflow-y-auto text-sm"></div>
+    </section>
+
+    <!-- 载荷 Tab -->
+    <section id="tab-payloads" class="tab-panel bg-white rounded-lg shadow p-4 hidden">
+        <div class="flex items-center gap-2 mb-3">
+            <button onclick="toggleAll('pld',true)" class="bg-blue-50 px-2 py-1 rounded text-xs">全选</button>
+            <button onclick="toggleAll('pld',false)" class="bg-blue-50 px-2 py-1 rounded text-xs">取消</button>
+            <span class="border-l h-5 mx-1"></span>
+            <button onclick="openPldDialog()" class="bg-green-600 text-white px-2 py-1 rounded text-xs">添加载荷</button>
+            <button onclick="delSelectedPld()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">删除选中</button>
+            <span id="pld_count" class="ml-auto text-xs text-blue-700 font-bold"></span>
+        </div>
+        <div id="pld_list" class="space-y-1 max-h-96 overflow-y-auto"></div>
+    </section>
+
+    <!-- 结果 Tab -->
+    <section id="tab-results" class="tab-panel bg-white rounded-lg shadow p-4 hidden">
+        <div class="flex items-center gap-2 mb-3">
+            <button onclick="location.href='/api/report/html'" class="bg-blue-50 px-3 py-1 rounded text-sm">导出HTML</button>
+            <button onclick="location.href='/api/report/json'" class="bg-blue-50 px-3 py-1 rounded text-sm">导出JSON</button>
+            <button onclick="clearResults()" class="bg-blue-50 px-3 py-1 rounded text-sm">清空结果</button>
+            <span id="res_count" class="ml-auto text-xs text-blue-700 font-bold"></span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-100 text-slate-600">
+                    <tr>
+                        <th class="px-2 py-2 text-left">测试模板</th>
+                        <th class="px-2 py-2 text-left">类别</th>
+                        <th class="px-2 py-2 text-left">测试载荷</th>
+                        <th class="px-2 py-2 text-left">判定结果</th>
+                        <th class="px-2 py-2 text-left">模型响应</th>
+                    </tr>
+                </thead>
+                <tbody id="res_body"></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<!-- 底部操作栏 -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg px-6 py-2 flex items-center gap-3">
+    <button id="run_btn" onclick="startEvaluate()" class="bg-blue-600 text-white px-5 py-2 rounded font-bold hover:bg-blue-700">开始测试</button>
+    <button id="stop_btn" onclick="stopEvaluate()" disabled class="bg-slate-400 text-white px-5 py-2 rounded font-bold">停止</button>
+    <div class="flex-1 mx-4">
+        <div class="bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div id="progress_bar" class="bg-blue-600 h-full transition-all duration-300" style="width:0%"></div>
+        </div>
+    </div>
+    <span id="status_text" class="text-blue-700 font-bold">就绪</span>
+</footer>
+
+<!-- 模板编辑对话框 -->
+<div id="tpl_dialog" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="tpl_dialog_title" class="text-lg font-bold mb-3">添加测试模板</h3>
+        <input id="tpl_name" placeholder="名称" class="w-full border rounded px-2 py-1 mb-2">
+        <input id="tpl_category" placeholder="类别" class="w-full border rounded px-2 py-1 mb-2">
+        <input id="tpl_desc" placeholder="描述" class="w-full border rounded px-2 py-1 mb-2">
+        <textarea id="tpl_content" rows="6" placeholder="模板内容 (用 {payload} 标记载荷位置)" class="w-full border rounded p-2 font-mono text-sm mb-3"></textarea>
+        <div class="flex justify-end gap-2">
+            <button onclick="closeDialog('tpl_dialog')" class="bg-slate-200 px-4 py-1 rounded">取消</button>
+            <button onclick="saveTpl()" class="bg-blue-600 text-white px-4 py-1 rounded">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 载荷编辑对话框 -->
+<div id="pld_dialog" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="pld_dialog_title" class="text-lg font-bold mb-3">添加测试载荷</h3>
+        <textarea id="pld_content" rows="3" placeholder="载荷内容" class="w-full border rounded p-2 text-sm mb-2"></textarea>
+        <label class="text-sm text-slate-600">风险级别:
+            <select id="pld_risk" class="border rounded px-2 py-1">
+                <option value="low">low</option>
+                <option value="medium" selected>medium</option>
+                <option value="high">high</option>
+                <option value="critical">critical</option>
+            </select>
+        </label>
+        <div class="flex justify-end gap-2 mt-4">
+            <button onclick="closeDialog('pld_dialog')" class="bg-slate-200 px-4 py-1 rounded">取消</button>
+            <button onclick="savePld()" class="bg-blue-600 text-white px-4 py-1 rounded">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 结果详情对话框 -->
+<div id="detail_dialog" class="modal hidden">
+    <div class="modal-content max-w-3xl">
+        <div id="detail_content" class="text-sm"></div>
+        <div class="flex justify-end mt-3">
+            <button onclick="closeDialog('detail_dialog')" class="bg-slate-200 px-4 py-1 rounded">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 初始数据(服务端注入) -->
+<script>
+    window.__INITIAL__ = {
+        templates: {{ templates | tojson }},
+        payloads: {{ payloads | tojson }},
+        results: {{ results | tojson }},
+        custom_inputs: {{ custom_inputs | tojson }},
+    };
+</script>
+{% endblock %}

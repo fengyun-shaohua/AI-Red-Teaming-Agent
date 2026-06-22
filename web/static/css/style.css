@@ -1,0 +1,162 @@
+/* 自定义样式(Tailwind 之外的补充) */
+
+/* Tab 按钮 */
+.tab-btn {
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+}
+.tab-btn:hover {
+    color: #1d4ed8;
+}
+.tab-btn.active {
+    color: #1d4ed8;
+    border-bottom-color: #1d4ed8;
+    background: #fff;
+}
+
+/* 模板/载荷行 */
+.list-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px;
+}
+.list-row:hover {
+    background: #f1f5f9;
+}
+.list-row input[type="checkbox"] {
+    flex-shrink: 0;
+}
+.row-tag {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+.row-name {
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+.row-desc {
+    color: #64748b;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.row-btn {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: #e0f2fe;
+    color: #0369a1;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.row-btn:hover {
+    background: #bae6fd;
+}
+
+/* 风险等级标签颜色 */
+.risk-critical { background: #fee2e2; color: #dc2626; }
+.risk-high     { background: #fef3c7; color: #d97706; }
+.risk-medium   { background: #dbeafe; color: #2563eb; }
+.risk-low      { background: #dcfce7; color: #16a34a; }
+
+/* 判定结果标签 */
+.verdict-tag {
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 3px;
+    color: #fff;
+    white-space: nowrap;
+}
+
+/* 模态框 */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+.modal-content {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    width: 90%;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* 结果表格 */
+#res_body tr {
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+}
+#res_body tr:hover {
+    background: #f8fafc;
+}
+#res_body td {
+    padding: 8px;
+    vertical-align: top;
+    font-size: 12px;
+}
+.cell-response {
+    max-width: 400px;
+    color: #475569;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+/* 历史记录项 */
+.history-item {
+    padding: 6px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    color: #475569;
+    background: #f8fafc;
+}
+
+/* 详情对话框内容 */
+.detail-section {
+    margin-bottom: 12px;
+}
+.detail-section h4 {
+    font-weight: bold;
+    color: #1d4ed8;
+    margin-bottom: 4px;
+}
+.detail-section pre {
+    background: #f1f5f9;
+    padding: 8px;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 240px;
+    overflow-y: auto;
+    font-size: 12px;
+}
+
+/* 底部固定栏留白,避免遮挡内容 */
+body {
+    padding-bottom: 70px;
+}

@@ -2,5 +2,11 @@
 langchain>=1.0.0
 langchain-openai>=1.0.0
 
+# Web 服务(FastAPI + WebSocket)
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+jinja2>=3.1.0
+python-multipart>=0.0.9
+
 # HTTP(模型列表接口使用)
 requests>=2.31.0
